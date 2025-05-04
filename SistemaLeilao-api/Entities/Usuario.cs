@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SistemaLeilao_api.Models
+namespace SistemaLeilao_api.Entities
 {
     [Table("usuarios")] // Explicitly map to the table name from the image
     public class Usuario
@@ -55,6 +55,9 @@ namespace SistemaLeilao_api.Models
         public string? ChavePix { get; set; }
 
         public DateTime DataCadastro { get; set; } = DateTime.UtcNow;
+
+        // Propriedade para "Manter Conectado"
+        public DateTime? ManterConectadoAte { get; set; }
 
         // Navigation properties (optional but good practice)
         [InverseProperty("Vendedor")]

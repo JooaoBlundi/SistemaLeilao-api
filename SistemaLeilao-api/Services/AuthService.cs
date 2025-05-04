@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SistemaLeilao_api.Data;
-using SistemaLeilao_api.DTOs;
-using SistemaLeilao_api.Interfaces;
 using SistemaLeilao_api.Models;
+using SistemaLeilao_api.Interfaces;
+using SistemaLeilao_api.Entities;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -26,19 +26,18 @@ namespace SistemaLeilao_api.Services
             _configuration = configuration;
         }
 
-        public async Task<string?> AuthenticateAsync(LoginDto loginDto)
+        public async Task<string?> AuthenticateAsync(LoginModel model)
         {
-            // Basic validation using Flunt
-            AddNotifications(new Flunt.Validations.Contract<LoginDto>()
+            AddNotifications(new Flunt.Validations.Contract<LoginModel>()
                 .Requires()
-                .IsNotNullOrEmpty(loginDto.Email, "Email", "Email não pode ser vazio.")
-                .IsEmail(loginDto.Email, "Email", "Email inválido.")
-                .IsNotNullOrEmpty(loginDto.Senha, "Senha", "Senha não pode ser vazia.")
+                .IsNotNullOrEmpty(model.Email, "Email", "Email não pode ser vazio.")
+                .IsEmail(model.Email, "Email", "Email inválido.")
+                .IsNotNullOrEmpty(model.Senha, "Senha", "Senha não pode ser vazia.")
             );
 
-            if (!IsValid) return null; // Return null if basic validation fails
+            if (!IsValid) return null; 
 
-            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == model.Email);
 
             if (user == null)
             {
@@ -46,18 +45,30 @@ namespace SistemaLeilao_api.Services
                 return null;
             }
 
-            // Verify password using BCrypt
-            if (!BCrypt.Net.BCrypt.Verify(loginDto.Senha, user.Senha))
+            if (!BCrypt.Net.BCrypt.Verify(model.Senha, user.Senha))
             {
                 AddNotification("Auth", "Usuário ou senha inválidos.");
                 return null;
             }
 
-            // If authentication is successful, generate JWT token
-            return GenerateJwtToken(user);
+            TimeSpan tokenExpiration = TimeSpan.FromHours(8); 
+            if (model.ManterConectado)
+            {
+                tokenExpiration = TimeSpan.FromHours(1); 
+                user.ManterConectadoAte = DateTime.UtcNow.Add(tokenExpiration);
+            }
+            else
+            {
+                user.ManterConectadoAte = null; 
+            }
+
+            _context.Usuarios.Update(user);
+            await _context.SaveChangesAsync(); 
+
+            return GenerateJwtToken(user, tokenExpiration);
         }
 
-        private string GenerateJwtToken(Usuario user)
+        private string GenerateJwtToken(Usuario user, TimeSpan expiresIn)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtSettings = _configuration.GetSection("Jwt");
@@ -67,11 +78,10 @@ namespace SistemaLeilao_api.Services
             {
                 Subject = new ClaimsIdentity(new[]{
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Nome), // Add user name claim
-                    new Claim(ClaimTypes.Email, user.Email) // Add email claim
-                    // Add other claims as needed (e.g., roles)
+                    new Claim(ClaimTypes.Name, user.Nome), 
+                    new Claim(ClaimTypes.Email, user.Email) 
                 }),
-                Expires = DateTime.UtcNow.AddHours(8), // Token expiration time (e.g., 8 hours)
+                Expires = DateTime.UtcNow.Add(expiresIn), 
                 Issuer = jwtSettings["Issuer"],
                 Audience = jwtSettings["Audience"],
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -81,7 +91,6 @@ namespace SistemaLeilao_api.Services
             return tokenHandler.WriteToken(token);
         }
 
-        // Helper method for hashing password (to be used in user registration service)
         public static string HashPassword(string password)
         {
             return BCrypt.Net.BCrypt.HashPassword(password);

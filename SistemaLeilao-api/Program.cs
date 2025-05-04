@@ -36,7 +36,9 @@ namespace SistemaLeilao_api
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>(); 
             builder.Services.AddScoped<ILeilaoService, LeilaoService>(); // Register LeilaoService
-            // Register other services here as they are created (e.g., ILanceService)
+            builder.Services.AddScoped<ILanceService, LanceService>(); // Register LanceService (assuming it exists)
+            builder.Services.AddScoped<IImagemLeilaoService, ImagemLeilaoService>(); // Register ImagemLeilaoService
+            // Register other services here as they are created
 
             // Configure JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");

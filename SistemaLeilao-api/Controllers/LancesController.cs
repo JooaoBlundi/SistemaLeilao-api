@@ -8,7 +8,7 @@ namespace SistemaLeilao_api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Require authentication for bid-related actions
+    [Authorize] 
     public class LancesController : ControllerBase
     {
         private readonly ILanceService _lanceService;
@@ -18,7 +18,6 @@ namespace SistemaLeilao_api.Controllers
             _lanceService = lanceService;
         }
 
-        // POST /api/lances
         [HttpPost]
         public async Task<IActionResult> PlaceBid([FromBody] PlaceBidDto bidDto) // Assuming PlaceBidDto exists or will be created
         {
@@ -27,7 +26,6 @@ namespace SistemaLeilao_api.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Get the authenticated user's ID (bidder)
             var compradorIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!long.TryParse(compradorIdString, out long compradorId))
             {
@@ -38,7 +36,6 @@ namespace SistemaLeilao_api.Controllers
 
             if (newLance == null)
             {
-                // Check notifications from the service
                 if (_lanceService is Services.LanceService lanceServiceInstance && !lanceServiceInstance.IsValid)
                 {
                     return BadRequest(new { errors = lanceServiceInstance.Notifications });
@@ -47,26 +44,20 @@ namespace SistemaLeilao_api.Controllers
                 return BadRequest(new { message = "Falha ao registrar lance." });
             }
 
-            // Return the created bid (or just a success message)
-            // Consider creating a LanceDto to return
-            return Ok(newLance); // Returning the Lance entity for now
+            return Ok(newLance); 
         }
 
-        // GET /api/lances/leilao/{leilaoId}
         [HttpGet("leilao/{leilaoId}")]
-        [AllowAnonymous] // Allow anyone to see bids for an auction
+        [AllowAnonymous] 
         public async Task<IActionResult> GetBidsByLeilao(long leilaoId)
         {
             var lances = await _lanceService.GetBidsByLeilaoAsync(leilaoId);
-            // Consider mapping to DTOs
             return Ok(lances);
         }
 
-        // GET /api/lances/meus
         [HttpGet("meus")]
         public async Task<IActionResult> GetMyBids()
         {
-            // Get the authenticated user's ID (bidder)
             var compradorIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!long.TryParse(compradorIdString, out long compradorId))
             {
@@ -74,12 +65,10 @@ namespace SistemaLeilao_api.Controllers
             }
 
             var lances = await _lanceService.GetBidsByUserAsync(compradorId);
-            // Consider mapping to DTOs
             return Ok(lances);
         }
     }
 
-    // DTO for placing a bid (needs to be created in DTOs folder)
     public class PlaceBidDto
     {
         [System.ComponentModel.DataAnnotations.Required]

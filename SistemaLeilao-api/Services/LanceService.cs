@@ -1,8 +1,10 @@
 using Flunt.Notifications;
+using Microsoft.AspNetCore.SignalR; // Add this for IHubContext
 using Microsoft.EntityFrameworkCore;
 using SistemaLeilao_api.Data;
+using SistemaLeilao_api.Hubs; // Add this for AuctionHub
 using SistemaLeilao_api.Interfaces;
-using SistemaLeilao_api.Models;
+using SistemaLeilao_api.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,13 +14,13 @@ namespace SistemaLeilao_api.Services
     public class LanceService : Notifiable<Notification>, ILanceService
     {
         private readonly LeilaoDbContext _context;
-        // Inject IHubContext if notifications are needed upon placing a bid
-        // private readonly Microsoft.AspNetCore.SignalR.IHubContext<Hubs.AuctionHub> _hubContext;
+        // Inject IHubContext for SignalR notifications
+        private readonly IHubContext<AuctionHub> _hubContext;
 
-        public LanceService(LeilaoDbContext context /*, IHubContext<Hubs.AuctionHub> hubContext */)
+        public LanceService(LeilaoDbContext context, IHubContext<AuctionHub> hubContext)
         {
             _context = context;
-            // _hubContext = hubContext;
+            _hubContext = hubContext; // Assign injected context
         }
 
         public async Task<Lance?> PlaceBidAsync(long leilaoId, decimal valor, long compradorId) // Parameter name kept for consistency with controller/DTO
@@ -30,11 +32,18 @@ namespace SistemaLeilao_api.Services
                 return null;
             }
 
-            // 2. Find the auction
+            // 2. Find the auction and the bidder
             var leilao = await _context.Leiloes.FindAsync(leilaoId);
+            var comprador = await _context.Usuarios.FindAsync(compradorId);
+
             if (leilao == null)
             {
                 AddNotification("LeilaoId", "Leilão não encontrado.");
+                return null;
+            }
+            if (comprador == null)
+            {
+                AddNotification("CompradorId", "Usuário comprador não encontrado.");
                 return null;
             }
 
@@ -63,7 +72,9 @@ namespace SistemaLeilao_api.Services
 
             if (valor <= minBidValue)
             {
-                AddNotification("Valor", $"O lance deve ser maior que {minBidValue:C}.");
+                // Format currency for error message
+                string formattedMinBid = minBidValue.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+                AddNotification("Valor", $"O lance deve ser maior que {formattedMinBid}.");
                 return null;
             }
 
@@ -79,8 +90,9 @@ namespace SistemaLeilao_api.Services
             _context.Lances.Add(newLance);
             await _context.SaveChangesAsync();
 
-            // Optional: Send notification via SignalR about the new bid
-            // await _hubContext.Clients.Group(leilaoId.ToString()).SendAsync("NewBid", newLance); // Send to clients interested in this auction
+            // Send notification via SignalR about the new bid
+            await _hubContext.Clients.All.SendAsync("ReceiveBidUpdate", leilaoId, comprador.Nome, valor);
+            // Consider sending only to a group: await _hubContext.Clients.Group($"Auction-{leilaoId}").SendAsync(...);
 
             return newLance;
         }
@@ -104,6 +116,9 @@ namespace SistemaLeilao_api.Services
                                  .ToListAsync();
             // Consider returning a DTO list
         }
+
+        // TODO: Implement logic to handle auction closing and send "ReceiveAuctionEnd" notification.
+        // This might involve a separate method in LeilaoService or a background task.
     }
 }
 

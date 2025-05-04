@@ -1,5 +1,5 @@
-using SistemaLeilao_api.Models;
-using SistemaLeilao_web.DTOs;
+using SistemaLeilao_api.Entities;
+using SistemaLeilao_web.Model;
 using System.Threading.Tasks;
 
 namespace SistemaLeilao_api.Interfaces
@@ -7,7 +7,6 @@ namespace SistemaLeilao_api.Interfaces
     public interface IUserService
     {
         Task<Usuario?> RegisterUserAsync(UsuarioModel registerDto);
-        // Add other user-related methods if needed (e.g., GetUserById, UpdateUser)
     }
 }
 

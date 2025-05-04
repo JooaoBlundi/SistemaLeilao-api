@@ -12,8 +12,8 @@ using SistemaLeilao_api.Data;
 namespace SistemaLeilao_api.Migrations
 {
     [DbContext(typeof(LeilaoDbContext))]
-    [Migration("20250501025535_InitialCreateMySQL")]
-    partial class InitialCreateMySQL
+    [Migration("20250502155136_AddManterConectadoAteToUsuario")]
+    partial class AddManterConectadoAteToUsuario
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -152,6 +152,9 @@ namespace SistemaLeilao_api.Migrations
                     b.Property<string>("Endereco")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("ManterConectadoAte")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Nome")
                         .IsRequired()

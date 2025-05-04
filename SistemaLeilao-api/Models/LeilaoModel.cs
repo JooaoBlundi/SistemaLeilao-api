@@ -4,7 +4,7 @@ using Flunt.Validations;
 using System;
 using System.Collections.Generic;
 
-namespace SistemaLeilao_api.DTOs
+namespace SistemaLeilao_api.Models
 {
     public class CreateLeilaoDto : Notifiable<Notification>
     {
@@ -18,17 +18,12 @@ namespace SistemaLeilao_api.DTOs
         [Range(0.01, double.MaxValue, ErrorMessage = "Preço inicial deve ser positivo")]
         public decimal PrecoInicial { get; set; }
 
-        // Assuming images are uploaded separately and their URLs/paths are stored
-        // Or handle file upload logic in the controller
         [Required(ErrorMessage = "Imagens são obrigatórias")]
         [MinLength(3, ErrorMessage = "É necessário no mínimo 3 imagens")]
-        public List<string> Imagens { get; set; } = new List<string>(); // List of image URLs/paths
+        public List<string> Imagens { get; set; } = new List<string>();
 
-        // Optional: Start and End dates might be set by the system or user
         public DateTime? DataInicio { get; set; }
         public DateTime? DataFim { get; set; }
-
-        // VendedorId will likely come from the authenticated user's claims in the service/controller
 
         public void Validate()
         {
@@ -39,7 +34,6 @@ namespace SistemaLeilao_api.DTOs
                 .IsGreaterThan(PrecoInicial, 0, "PrecoInicial", "Preço inicial deve ser positivo")
                 .IsNotNull(Imagens, "Imagens", "Lista de imagens não pode ser nula")
                 .IsGreaterThan(Imagens?.Count ?? 0, 2, "Imagens", "É necessário no mínimo 3 imagens")
-                // Add other validations as needed (e.g., date logic)
             );
         }
     }

@@ -22,7 +22,41 @@ namespace SistemaLeilao_api.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Lance", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.ImagemLeilao", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("DadosImagem")
+                        .IsRequired()
+                        .HasColumnType("longblob");
+
+                    b.Property<DateTime>("DataUpload")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsPrincipal")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("LeilaoId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("NomeArquivo")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeilaoId");
+
+                    b.ToTable("ImagensLeilao");
+                });
+
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Lance", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -51,7 +85,7 @@ namespace SistemaLeilao_api.Migrations
                     b.ToTable("lances");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Leilao", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Leilao", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -72,10 +106,6 @@ namespace SistemaLeilao_api.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Imagens")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -106,7 +136,7 @@ namespace SistemaLeilao_api.Migrations
                     b.ToTable("leiloes");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Usuario", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Usuario", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -150,6 +180,9 @@ namespace SistemaLeilao_api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<DateTime?>("ManterConectadoAte")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -184,15 +217,26 @@ namespace SistemaLeilao_api.Migrations
                     b.ToTable("usuarios");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Lance", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.ImagemLeilao", b =>
                 {
-                    b.HasOne("SistemaLeilao_api.Models.Leilao", "Leilao")
+                    b.HasOne("SistemaLeilao_api.Entities.Leilao", "Leilao")
+                        .WithMany("ImagensLeilao")
+                        .HasForeignKey("LeilaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Leilao");
+                });
+
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Lance", b =>
+                {
+                    b.HasOne("SistemaLeilao_api.Entities.Leilao", "Leilao")
                         .WithMany("Lances")
                         .HasForeignKey("LeilaoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SistemaLeilao_api.Models.Usuario", "Usuario")
+                    b.HasOne("SistemaLeilao_api.Entities.Usuario", "Usuario")
                         .WithMany("Lances")
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -203,14 +247,14 @@ namespace SistemaLeilao_api.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Leilao", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Leilao", b =>
                 {
-                    b.HasOne("SistemaLeilao_api.Models.Usuario", "Comprador")
+                    b.HasOne("SistemaLeilao_api.Entities.Usuario", "Comprador")
                         .WithMany("LeiloesComprados")
                         .HasForeignKey("CompradorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SistemaLeilao_api.Models.Usuario", "Vendedor")
+                    b.HasOne("SistemaLeilao_api.Entities.Usuario", "Vendedor")
                         .WithMany("LeiloesVendidos")
                         .HasForeignKey("VendedorId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -220,12 +264,14 @@ namespace SistemaLeilao_api.Migrations
                     b.Navigation("Vendedor");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Leilao", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Leilao", b =>
                 {
+                    b.Navigation("ImagensLeilao");
+
                     b.Navigation("Lances");
                 });
 
-            modelBuilder.Entity("SistemaLeilao_api.Models.Usuario", b =>
+            modelBuilder.Entity("SistemaLeilao_api.Entities.Usuario", b =>
                 {
                     b.Navigation("Lances");
 
@@ -233,7 +279,6 @@ namespace SistemaLeilao_api.Migrations
 
                     b.Navigation("LeiloesVendidos");
                 });
-#pragma warning restore 612, 618
         }
     }
 }

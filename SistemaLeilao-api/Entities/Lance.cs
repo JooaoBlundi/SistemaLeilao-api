@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SistemaLeilao_api.Models
+namespace SistemaLeilao_api.Entities
 {
     [Table("lances")] // Explicitly map to the table name from the image
     public class Lance

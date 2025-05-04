@@ -2,11 +2,11 @@ using Flunt.Notifications;
 using Flunt.Validations;
 using Microsoft.EntityFrameworkCore;
 using SistemaLeilao_api.Data;
-using SistemaLeilao_api.DTOs;
-using SistemaLeilao_api.Interfaces;
 using SistemaLeilao_api.Models;
-using SistemaLeilao_web.DTOs;
+using SistemaLeilao_api.Interfaces;
+using SistemaLeilao_api.Entities;
 using System.Threading.Tasks;
+using SistemaLeilao_web.Model;
 
 namespace SistemaLeilao_api.Services
 {
@@ -22,21 +22,18 @@ namespace SistemaLeilao_api.Services
         public async Task<Usuario?> RegisterUserAsync(UsuarioModel model)
         {
 
-            // Check if email already exists
             if (await _context.Usuarios.AnyAsync(u => u.Email == model.Email))
             {
                 AddNotification("Email", "Este email já está cadastrado.");
                 return null;
             }
             
-            // Check if CPF already exists (optional, depending on business rules)
             if (await _context.Usuarios.AnyAsync(u => u.Cpf == model.Cpf.Replace(".", "").Replace("-", "")))
             {
                  AddNotification("Cpf", "Este CPF já está cadastrado.");
                  return null;
             }
 
-            // Hash the password using the helper from AuthService
             var hashedPassword = AuthService.HashPassword(model.Senha);
 
             var newUser = new Usuario
@@ -44,8 +41,8 @@ namespace SistemaLeilao_api.Services
                 Nome = model.Nome,
                 Sobrenome = model.Sobrenome,
                 Email = model.Email,
-                Senha = hashedPassword, // Store the hashed password
-                Cpf = model.Cpf.Replace(".", "").Replace("-", ""), // Store CPF without formatting
+                Senha = hashedPassword, 
+                Cpf = model.Cpf.Replace(".", "").Replace("-", ""), 
                 DataNascimento = model.DataNascimento,
                 Sexo = model.Sexo,
                 Endereco = model.Endereco,
@@ -60,7 +57,7 @@ namespace SistemaLeilao_api.Services
             _context.Usuarios.Add(newUser);
             await _context.SaveChangesAsync();
 
-            return newUser; // Return the created user (without password)
+            return newUser; 
         }
 
         public void ValidateUserModel(UsuarioModel model)
